@@ -1,12 +1,27 @@
 from datetime import datetime 
 import sqlite3
 import sys
+from typing import List
 import waybackpy
+
+
+query = """
+select distinct
+  pl.url
+from
+  moz_bookmarks bk_child
+  join moz_bookmarks bk_parent on bk_child.parent = bk_parent.id
+  join moz_places pl on bk_child.fk = pl.id
+where
+  url like 'http%'
+order by
+  bk_child.dateAdded desc
+"""
 
 
 def log(message: str):
     timestamp = datetime.now().isoformat()
-    print(f'[{timestamp}] {message}')
+    print(f'[{timestamp}] {message}', flush=True)
 
 
 def save(url: str):
@@ -20,17 +35,16 @@ def save(url: str):
         log(f'Error: {url}, {e}')
 
 
-def get_query() -> str:
-    query_file = open('query.sql', 'r')
-    query = query_file.read()
-    query_file.close()
-    return query
+def get_db_path() -> str:
+    usage = 'Usage: main.py /path/to/firefox/places.sqlite'
+    assert len(sys.argv) == 2, usage
+    assert sys.argv[1].endswith('places.sqlite'), usage
+    return sys.argv[1]
 
 
-def get_bookmark_urls() -> list[str]:
+def get_bookmark_urls() -> List[str]:
     bookmarks = []
-    query = get_query()
-    conn = sqlite3.connect('places.sqlite')
+    conn = sqlite3.connect(get_db_path())
     cur = conn.cursor()
     for row in cur.execute(query):
         bookmarks.append(row[0])
@@ -38,8 +52,10 @@ def get_bookmark_urls() -> list[str]:
 
 
 def main():
+    log('Run Start')
     for url in get_bookmark_urls():
         save(url)
+    log('Run End')
 
 
 if __name__ == '__main__':
