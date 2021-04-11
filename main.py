@@ -1,7 +1,8 @@
 from datetime import datetime 
+from typing import List
 import sqlite3
 import sys
-from typing import List
+import traceback
 import waybackpy
 
 
@@ -26,13 +27,14 @@ def log(message: str):
 
 def save(url: str):
     user_agent = 'Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0'
-    wayback = waybackpy.Url(url, user_agent)
     log(f'Start: {url}')
     try:
+        wayback = waybackpy.Url(url, user_agent)
         archive = wayback.save()
         log(f'Done: {archive.archive_url}')
     except Exception as e:
         log(f'Error: {url}, {e}')
+        log(traceback.format_exc())
 
 
 def get_db_path() -> str:
